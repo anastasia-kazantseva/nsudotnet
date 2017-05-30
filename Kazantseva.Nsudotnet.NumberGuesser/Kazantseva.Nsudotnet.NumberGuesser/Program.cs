@@ -85,7 +85,7 @@ namespace Kazantseva.Nsudotnet.NumberGuesser
 
                     _iteration += 4;
 
-                    Console.WriteLine(_swearings[random.Next(_swearings.Length)]);
+                    Console.WriteLine(_swearings[random.Next(_swearings.Length)], _nickname);
                 }
 
                 Console.WriteLine("Sorry not sorry. Run away, you loser!");
