@@ -10,13 +10,15 @@ namespace Kazantseva.Nsudotnet.Enigma
 {
     class Encryptor : BasicCrypt
     {
-        private SymmetricAlgorithm _algorithm;
+        //private SymmetricAlgorithm _algorithm;
+        private String _algorithm;
         private String _fileFrom;
         private String _fileTo;
 
         public Encryptor(String from, String algorithm, String to)
         {
-            this._algorithm = GetAlgorithm(algorithm);
+            //this._algorithm = GetAlgorithm(algorithm);
+            this._algorithm = algorithm;
             this._fileFrom = from;
             this._fileTo = to;
             
@@ -24,31 +26,34 @@ namespace Kazantseva.Nsudotnet.Enigma
 
         public override void Crypt()
         {
-            this._algorithm.GenerateKey();
-            this._algorithm.GenerateIV();
-
-            String fileKey = Path.GetFileNameWithoutExtension(_fileFrom) + ".key.txt";
-
-            using (FileStream keyStream = new FileStream(fileKey, FileMode.Create))
+            using (SymmetricAlgorithm algorithm = GetAlgorithm(_algorithm))
             {
-                using (StreamWriter keyWriter = new StreamWriter(keyStream))
-                {
-                    keyWriter.WriteLine(Convert.ToBase64String(_algorithm.Key));
-                    keyWriter.WriteLine(Convert.ToBase64String(_algorithm.IV));
-                }
+                algorithm.GenerateKey();
+                algorithm.GenerateIV();
 
-                using (FileStream fileToStream = new FileStream(_fileTo, FileMode.Create, FileAccess.Write))
+                String fileKey = Path.GetFileNameWithoutExtension(_fileFrom) + ".key.txt";
+
+                using (FileStream keyStream = new FileStream(fileKey, FileMode.Create))
                 {
-                    using (FileStream fileFromStream = new FileStream(_fileFrom, FileMode.Open, FileAccess.Read))
+                    using (StreamWriter keyWriter = new StreamWriter(keyStream))
                     {
-                        using (CryptoStream cryptoStream =
-                            new CryptoStream(fileToStream, _algorithm.CreateEncryptor(), CryptoStreamMode.Write))
+                        keyWriter.WriteLine(Convert.ToBase64String(algorithm.Key));
+                        keyWriter.WriteLine(Convert.ToBase64String(algorithm.IV));
+                    }
+
+                    using (FileStream fileToStream = new FileStream(_fileTo, FileMode.Create, FileAccess.Write))
+                    {
+                        using (FileStream fileFromStream = new FileStream(_fileFrom, FileMode.Open, FileAccess.Read))
                         {
-                            fileFromStream.CopyTo(cryptoStream);
+                            using (CryptoStream cryptoStream =
+                                new CryptoStream(fileToStream, algorithm.CreateEncryptor(), CryptoStreamMode.Write))
+                            {
+                                fileFromStream.CopyTo(cryptoStream);
+                            }
                         }
                     }
+                    Console.WriteLine("Encyption done");
                 }
-                Console.WriteLine("Encyption done");
             }
         }
     }

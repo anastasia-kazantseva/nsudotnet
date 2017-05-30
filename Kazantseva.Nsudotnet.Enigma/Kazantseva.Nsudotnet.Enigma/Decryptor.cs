@@ -11,14 +11,16 @@ namespace Kazantseva.Nsudotnet.Enigma
 {
     class Decryptor : BasicCrypt
     {
-        private SymmetricAlgorithm _algorithm;
+        //private SymmetricAlgorithm _algorithm;
+        private String _algorithm;
         private String _fileFrom;
         private String _fileTo;
         private String _fileKey;
 
         public Decryptor(String from, String algorithm, String to, String key)
         {
-            this._algorithm = GetAlgorithm(algorithm);
+            //this._algorithm = GetAlgorithm(algorithm);
+            this._algorithm = algorithm;
             this._fileFrom = from;
             this._fileTo = to;
             this._fileKey = key;
@@ -29,26 +31,31 @@ namespace Kazantseva.Nsudotnet.Enigma
 
         public override void Crypt()
         {
-            using (FileStream keyStream = new FileStream(_fileKey, FileMode.Open))
+            using (SymmetricAlgorithm algorithm = GetAlgorithm(_algorithm))
             {
-                using (StreamReader keyReader = new StreamReader(keyStream))
+                using (FileStream keyStream = new FileStream(_fileKey, FileMode.Open))
                 {
-                    this._algorithm.Key = Convert.FromBase64String(keyReader.ReadLine());
-                    this._algorithm.IV = Convert.FromBase64String(keyReader.ReadLine());
-                    using (FileStream fileToStream = new FileStream(_fileTo, FileMode.Create, FileAccess.Write))
+                    using (StreamReader keyReader = new StreamReader(keyStream))
                     {
-                        using (FileStream fileFromStream = new FileStream(_fileFrom, FileMode.Open, FileAccess.Read))
+                        algorithm.Key = Convert.FromBase64String(keyReader.ReadLine());
+                        algorithm.IV = Convert.FromBase64String(keyReader.ReadLine());
+                        using (FileStream fileToStream = new FileStream(_fileTo, FileMode.Create, FileAccess.Write))
                         {
-                            using (CryptoStream cryptoStream =
-                                new CryptoStream(fileToStream, _algorithm.CreateDecryptor(), CryptoStreamMode.Write))
+                            using (FileStream fileFromStream =
+                                new FileStream(_fileFrom, FileMode.Open, FileAccess.Read))
                             {
-                                fileFromStream.CopyTo(cryptoStream);
+                                using (CryptoStream cryptoStream =
+                                    new CryptoStream(fileToStream, algorithm.CreateDecryptor(),
+                                        CryptoStreamMode.Write))
+                                {
+                                    fileFromStream.CopyTo(cryptoStream);
+                                }
                             }
                         }
                     }
                 }
+                Console.WriteLine("Decryption done");
             }
-            Console.WriteLine("Decryption done");
         }
     }
 }
